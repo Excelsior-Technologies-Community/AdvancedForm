@@ -1,0 +1,141 @@
+﻿@{
+    ViewData["Title"] = "Create Content";
+}
+
+<h2>Create Content</h2>
+
+<form asp-action="Create" method="post">
+
+
+    <div class="mb-3">
+        <label class="form-label">Title</label>
+        <input name="Title" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Content</label>
+        <textarea id="editor" name="HtmlContent"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Address</label>
+        <input id="address" name="Address" class="form-control" />
+    </div>
+
+    <div class="mb-4">
+        <label class="form-label">Upload Files</label>
+        <div id="fileDropzone" class="dropzone border rounded"></div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Upload & Crop Image</label>
+        <input type="file" id="imageInput" class="form-control" />
+        <img id="cropPreview"
+             style="max-width:100%; max-height:400px; border:1px solid #ccc; visibility:hidden;" />
+
+
+        <input type="hidden" name="ImagePath" id="ImagePath" />
+        <button type="button" id="cropBtn" class="btn btn-secondary mt-2">
+            Crop & Save
+        </button>
+    </div>
+
+    <button class="btn btn-success mt-3">Save Content</button>
+
+</form>
+
+<hr />
+
+<a asp-action="Index" class="btn btn-outline-primary mt-3">
+    View All Contents
+</a>
+
+
+<link href="https://cdn.jsdelivr.net/npm/dropzone@5/dist/min/dropzone.min.css" rel="stylesheet" />
+<link href="https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.css" rel="stylesheet" />
+<script src="https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.js"></script>
+<script src="https://cdn.tiny.cloud/1/itv9r52qxh8oz2dyzj2z85rlmq11wbh0gsxypzry8918mlvq/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/dropzone@5/dist/min/dropzone.min.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=Google-Api-Key&libraries=places"></script>
+
+<script>
+    tinymce.init({
+        selector: '#editor',
+        height: 300
+    });
+
+    Dropzone.autoDiscover = false;
+    new Dropzone("#fileDropzone", {
+        url: "/Content/UploadFile",
+        maxFiles: 5,
+        success: function () {
+            console.log("File uploaded");
+        }
+    });
+
+    new google.maps.places.Autocomplete(
+        document.getElementById("address")
+    );
+
+    
+    let cropper = null;
+    const image = document.getElementById("cropPreview");
+    const input = document.getElementById("imageInput");
+
+    input.addEventListener("change", function () {
+
+        const file = this.files[0];
+        if (!file) return;
+
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+
+            image.src = e.target.result;
+
+            image.onload = function () {
+                cropper = new Cropper(image, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                    autoCropArea: 1
+                });
+
+                console.log("✅ Cropper initialized");
+            };
+        };
+
+        reader.readAsDataURL(file);
+    });
+
+    document.getElementById("cropBtn").addEventListener("click", function () {
+
+        if (!cropper) {
+            alert("Cropper not ready. Select image again.");
+            return;
+        }
+
+        const canvas = cropper.getCroppedCanvas({
+            width: 400,
+            height: 400
+        });
+
+        const base64 = canvas.toDataURL("image/png");
+
+        fetch("/Content/UploadCroppedImage", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ imageBase64: base64 })
+        })
+        .then(r => r.json())
+        .then(d => {
+            document.getElementById("ImagePath").value = d.path;
+            alert("✅ Image cropped & saved");
+        })
+        .catch(() => alert("Upload failed"));
+    });
+</script>
+

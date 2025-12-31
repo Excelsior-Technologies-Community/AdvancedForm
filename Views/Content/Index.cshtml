@@ -1,0 +1,45 @@
+﻿@model IEnumerable<AdvancedForm.Models.ContentItem>
+
+@{
+    ViewData["Title"] = "Content List";
+}
+
+<h2>Content List (Drag to Reorder)</h2>
+
+<a asp-action="Create" class="btn btn-primary mt-4">
+    Add New Content
+</a>
+
+
+<ul id="sortableList" class="list-group mt-3">
+    @foreach (var item in Model)
+    {
+        <li class="list-group-item d-flex justify-content-between align-items-center"
+            data-id="@item.Id">
+            <span>
+                <strong>@item.Sequence.</strong> @item.Title
+            </span>
+            <i class="bi bi-arrows-move"></i>
+        </li>
+    }
+</ul>
+
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+    Sortable.create(document.getElementById("sortableList"), {
+        animation: 150,
+        onEnd: function () {
+            let ids = [];
+            document.querySelectorAll("#sortableList li")
+                .forEach(li => ids.push(li.dataset.id));
+
+            fetch("/Content/SaveOrder", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(ids)
+            });
+        }
+    });
+</script>
