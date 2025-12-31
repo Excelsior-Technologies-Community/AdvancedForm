@@ -140,19 +140,7 @@ This project uses **CropperJS v1.5.13**.
 <script src="https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.js"></script>
 ```
 
-> ❗ CropperJS v2+ breaks initialization with classic syntax.
 
----
-
-## 🔐 Anti-Forgery Note
-
-For JSON-based image upload, antiforgery is disabled **only for this endpoint**:
-
-```csharp
-[HttpPost]
-[IgnoreAntiforgeryToken]
-public IActionResult UploadCroppedImage([FromBody] ImageCropRequest request)
-```
 
 This is intentional for AJAX image upload.
 
